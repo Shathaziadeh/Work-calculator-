@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Earnings Calculator</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -14,25 +14,28 @@
         <thead>
             <tr>
                 <th>Worker Name</th>
-                <th>Rate per Hour</th>
                 <th>Hours Worked</th>
+                <th>Price per Hour</th>
+                <th>Threshold Hours</th>
                 <th>Frequency</th>
                 <th>Earnings</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td><input type="text" placeholder="Enter worker name" required></td>
-                <td><input type="number" value="1.5" step="0.01" required></td>
-                <td><input type="number" placeholder="Enter hours worked"></td>
+                <td><input type="number" placeholder="Enter hours worked" min="0"></td>
+                <td><input type="number" value="10" step="0.01" required></td>
+                <td><input type="number" value="50" min="0" required></td>
                 <td>
                     <select>
-                        <option value="daily">Daily</option>
                         <option value="weekly">Weekly</option>
                         <option value="monthly">Monthly</option>
                     </select>
                 </td>
                 <td class="earnings">$0.00</td>
+                <td><button class="delete-btn">Delete</button></td>
             </tr>
         </tbody>
     </table>
@@ -48,18 +51,24 @@
             const newRow = document.createElement('tr');
             newRow.innerHTML = `
                 <td><input type="text" placeholder="Enter worker name" required></td>
-                <td><input type="number" value="1.5" step="0.01" required></td>
-                <td><input type="number" placeholder="Enter hours worked"></td>
+                <td><input type="number" placeholder="Enter hours worked" min="0"></td>
+                <td><input type="number" value="10" step="0.01" required></td>
+                <td><input type="number" value="50" min="0" required></td>
                 <td>
                     <select>
-                        <option value="daily">Daily</option>
                         <option value="weekly">Weekly</option>
                         <option value="monthly">Monthly</option>
                     </select>
                 </td>
                 <td class="earnings">$0.00</td>
+                <td><button class="delete-btn">Delete</button></td>
             `;
             tableBody.appendChild(newRow);
+
+            // Add event listener for the delete button
+            newRow.querySelector('.delete-btn').addEventListener('click', function() {
+                tableBody.removeChild(newRow);
+            });
         });
 
         document.getElementById('calculate').addEventListener('click', function() {
@@ -68,17 +77,25 @@
 
             rows.forEach(row => {
                 const name = row.querySelector('input[type="text"]').value;
-                const rate = parseFloat(row.querySelector('input[type="number"]').value) || 1.5;
-                const hours = parseFloat(row.querySelectorAll('input[type="number"]')[1].value) || 0;
+                const hours = parseFloat(row.querySelectorAll('input[type="number"]')[0].value) || 0;
+                const pricePerHour = parseFloat(row.querySelectorAll('input[type="number"]')[1].value) || 10;
+                const thresholdHours = parseFloat(row.querySelectorAll('input[type="number"]')[2].value) || 50;
                 const frequency = row.querySelector('select').value;
 
                 let earnings = 0;
-                if (frequency === 'daily') {
-                    earnings = hours * rate * 1.5; // Daily earnings
-                } else if (frequency === 'weekly') {
-                    earnings = hours * rate * 1.5 * 5; // Assuming 5 working days
-                } else if (frequency === 'monthly') {
-                    earnings = hours * rate * 1.5 * 20; // Assuming 20 working days
+
+                if (hours <= thresholdHours) {
+                    earnings = hours * pricePerHour; // Regular earnings
+                } else {
+                    const regularEarnings = thresholdHours * pricePerHour; // Earnings for threshold hours
+                    const overtimeHours = hours - thresholdHours; // Overtime hours
+                    const overtimeEarnings = overtimeHours * (pricePerHour * 1.5); // Overtime earnings
+                    earnings = regularEarnings + overtimeEarnings; // Total earnings
+                }
+
+                // Adjust for monthly frequency
+                if (frequency === 'monthly') {
+                    earnings *= 4; // Assuming 4 weeks in a month
                 }
 
                 row.querySelector('.earnings').innerText = `$${earnings.toFixed(2)}`;
@@ -86,6 +103,14 @@
             });
 
             document.getElementById('result').innerText = results;
+        });
+
+        // Event listener for existing delete buttons
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = button.parentElement.parentElement;
+                row.parentElement.removeChild(row);
+            });
         });
     </script>
 
